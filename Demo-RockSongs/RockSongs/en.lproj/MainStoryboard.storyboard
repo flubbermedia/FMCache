@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="2.0" toolsVersion="2549" systemVersion="12A269" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="ZTw-Ri-Q4J">
+    <dependencies>
+        <deployment defaultVersion="1296" identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="1498"/>
+    </dependencies>
+    <scenes>
+        <!--App View Controller-->
+        <scene sceneID="NyO-Qp-4IZ">
+            <objects>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="9zM-p3-TcM" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <tableViewController id="ZTw-Ri-Q4J" customClass="AppViewController" sceneMemberID="viewController">
+                    <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" rowHeight="64" sectionHeaderHeight="22" sectionFooterHeight="22" id="Gjg-fS-Mza">
+                        <rect key="frame" x="0.0" y="20" width="320" height="460"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                        <prototypes>
+                            <tableViewCell contentMode="scaleToFill" selectionStyle="none" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="CellIdentifier" id="MLZ-v9-u9O" customClass="AppTableViewCell">
+                                <rect key="frame" x="0.0" y="22" width="320" height="64"/>
+                                <autoresizingMask key="autoresizingMask"/>
+                                <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center">
+                                    <rect key="frame" x="0.0" y="0.0" width="320" height="63"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                    <subviews>
+                                        <imageView contentMode="scaleToFill" id="HyM-Ii-OPP" customClass="FMImageView">
+                                            <rect key="frame" x="0.0" y="0.0" width="64" height="64"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        </imageView>
+                                        <imageView contentMode="scaleToFill" id="YeW-wi-B7b" customClass="FMImageView">
+                                            <rect key="frame" x="64" y="0.0" width="64" height="64"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        </imageView>
+                                        <imageView contentMode="scaleToFill" id="E92-tm-MKI" customClass="FMImageView">
+                                            <rect key="frame" x="128" y="0.0" width="64" height="64"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        </imageView>
+                                        <imageView contentMode="scaleToFill" id="Jx6-1M-xAr" customClass="FMImageView">
+                                            <rect key="frame" x="192" y="0.0" width="64" height="64"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        </imageView>
+                                        <imageView contentMode="scaleToFill" id="pVx-mE-TyI" customClass="FMImageView">
+                                            <rect key="frame" x="256" y="0.0" width="64" height="64"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        </imageView>
+                                    </subviews>
+                                    <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                                </view>
+                                <connections>
+                                    <outlet property="imageView1" destination="HyM-Ii-OPP" id="OhL-OT-lCJ"/>
+                                    <outlet property="imageView2" destination="YeW-wi-B7b" id="tG5-3m-Dkk"/>
+                                    <outlet property="imageView3" destination="E92-tm-MKI" id="5TH-8P-Bth"/>
+                                    <outlet property="imageView4" destination="Jx6-1M-xAr" id="Faj-Ug-Ksd"/>
+                                    <outlet property="imageView5" destination="pVx-mE-TyI" id="wWs-GA-bng"/>
+                                </connections>
+                            </tableViewCell>
+                        </prototypes>
+                        <connections>
+                            <outlet property="dataSource" destination="ZTw-Ri-Q4J" id="YMS-7R-3tD"/>
+                            <outlet property="delegate" destination="ZTw-Ri-Q4J" id="BnV-bH-87G"/>
+                        </connections>
+                    </tableView>
+                </tableViewController>
+            </objects>
+            <point key="canvasLocation" x="79" y="142"/>
+        </scene>
+    </scenes>
+    <classes>
+        <class className="AppTableViewCell" superclassName="UITableViewCell">
+            <source key="sourceIdentifier" type="project" relativePath="./Classes/AppTableViewCell.h"/>
+            <relationships>
+                <relationship kind="outlet" name="imageView1" candidateClass="FMImageView"/>
+                <relationship kind="outlet" name="imageView2" candidateClass="FMImageView"/>
+                <relationship kind="outlet" name="imageView3" candidateClass="FMImageView"/>
+                <relationship kind="outlet" name="imageView4" candidateClass="FMImageView"/>
+                <relationship kind="outlet" name="imageView5" candidateClass="FMImageView"/>
+            </relationships>
+        </class>
+        <class className="AppViewController" superclassName="UITableViewController">
+            <source key="sourceIdentifier" type="project" relativePath="./Classes/AppViewController.h"/>
+        </class>
+        <class className="FMImageView" superclassName="UIImageView">
+            <source key="sourceIdentifier" type="project" relativePath="./Classes/FMImageView.h"/>
+        </class>
+    </classes>
+    <simulatedMetricsContainer key="defaultSimulatedMetrics">
+        <simulatedStatusBarMetrics key="statusBar"/>
+        <simulatedOrientationMetrics key="orientation"/>
+        <simulatedScreenMetrics key="destination"/>
+    </simulatedMetricsContainer>
+</document>
