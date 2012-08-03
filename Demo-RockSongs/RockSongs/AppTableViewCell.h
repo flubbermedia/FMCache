@@ -17,4 +17,8 @@
 @property (strong, nonatomic) IBOutlet FMImageView *imageView4;
 @property (strong, nonatomic) IBOutlet FMImageView *imageView5;
 
+@property (assign, nonatomic) BOOL isDark;
+@property (assign, nonatomic) BOOL isRandomColors;
+@property (assign, nonatomic) CGFloat colorOffset;
+
 @end
