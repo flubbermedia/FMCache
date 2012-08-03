@@ -45,54 +45,39 @@
 
 - (NSOperation *)loadImageWithURL:(NSURL *)url completion:(void (^)(UIImage *image, BOOL fromMemory))completion
 {
+    //memory cache
     UIImage *memoryImage = [[FMCache memoryCache] objectForKey:url.absoluteString];
     if (memoryImage)
     {
         completion(memoryImage, YES);
     }
-    else if ([[FMCache defaultCache] hasCacheForKey:url.absoluteString])
+    
+    //disk cache
+    if ([[FMCache defaultCache] hasCacheForKey:url.absoluteString])
     {
         [[FMCache defaultCache] imageForKey:url.absoluteString
                                  completion:^(UIImage *image) {
                                      [[FMCache memoryCache] setObject:image forKey:url.absoluteString];
                                      completion(image, NO);
                                  }];
+        return nil;
     }
-    else
-    {
-        NSBlockOperation *op = [NSBlockOperation blockOperationWithBlock:^{
-            NSData *data = [NSData dataWithContentsOfURL:url];
-            UIImage *image = [UIImage imageWithData:data];
-            if (image)
-            {
-                [[FMCache defaultCache] setImage:image forKey:url.absoluteString];
-                [[FMCache memoryCache] setObject:image forKey:url.absoluteString];
-            }
-            completion(image, NO);
-        }];
-        
-        [_networkOperationQueue addOperation:op];
-        
-        return op;
-    }
-    
-    return nil;
-}
 
-+ (void)cancelOperation:(NSOperation *)operation
-{
-    [[FMImageLoader sharedLoader] cancelOperation:operation];
-}
-
-- (void)cancelOperation:(NSOperation *)operation
-{
-    for (NSOperation *op in _networkOperationQueue.operations)
-    {
-        if ([op isEqual:operation])
+    //download remote
+    NSBlockOperation *op = [NSBlockOperation blockOperationWithBlock:^{
+        NSData *data = [NSData dataWithContentsOfURL:url];
+        UIImage *image = [UIImage imageWithData:data];
+        if (image)
         {
-            [op cancel];
+            [[FMCache defaultCache] setImage:image forKey:url.absoluteString];
+            [[FMCache memoryCache] setObject:image forKey:url.absoluteString];
         }
-    }
+        completion(image, NO);
+    }];
+    
+    [_networkOperationQueue addOperation:op];
+    
+    return op;
 }
 
 @end
