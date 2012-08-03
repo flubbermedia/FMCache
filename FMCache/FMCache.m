@@ -181,7 +181,7 @@ static NSString *cacheFilePathWithKey(NSString *key)
 
 - (void)setImage:(UIImage *)image forKey:(NSString *)key
 {
-    [self setData:UIImageJPEGRepresentation(image, 0.8) forKey:key];
+    [self setData:UIImagePNGRepresentation(image) forKey:key];
 }
 
 #pragma mark - Utilities
