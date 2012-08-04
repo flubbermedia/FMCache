@@ -7,14 +7,11 @@
 //
 
 #import "AppDelegate.h"
-#import "FMCache.h"
 
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-    [FMCache defaultCache];
-    
     // Override point for customization after application launch.
     return YES;
 }

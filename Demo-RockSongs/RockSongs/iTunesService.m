@@ -45,7 +45,7 @@ static NSString * const _serviceURLString = @"http://itunes.apple.com/us/rss/top
         for (NSDictionary *imageLink in imagesLinks)
         {
             CGFloat height = [[[imageLink objectForKey:@"attributes"] objectForKey:@"height"] floatValue];
-            if (height == 170)
+            if (height == 55)
             {
                 [images addObject:[imageLink objectForKey:@"label"]];
                 break;

@@ -30,8 +30,6 @@
         });
     }];
     
-    self.tableView.frame = CGRectMake(0., 0., 200., 200.);
-    
     self.tableView.backgroundColor = [UIColor blackColor];
     self.tableView.separatorColor = [UIColor clearColor];
     
