@@ -58,11 +58,6 @@
     cell.imageView4.imageURL = [NSURL URLWithString:[self objectInDatasourceAtIndex:startIndex + 3]];
     cell.imageView5.imageURL = [NSURL URLWithString:[self objectInDatasourceAtIndex:startIndex + 4]];
     
-    [cell.imageView1 setImageURL:<#(NSURL *)#>
-                      completion:^{
-                          <#code#>
-                      }];
-    
     cell.isRandomColors = YES;
     
     return cell;
