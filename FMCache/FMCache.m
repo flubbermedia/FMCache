@@ -1,6 +1,5 @@
 //
 //  FMCache.m
-//  FMCaching
 //
 //  Created by Maurizio Cremaschi on 8/2/12.
 //  Copyright (c) 2012 Flubber Media Ltd. All rights reserved.
@@ -9,64 +8,47 @@
 #import "FMCache.h"
 #import <CommonCrypto/CommonDigest.h>
 
-static NSTimeInterval const _defaultTimeoutInterval = 86400;
+static NSTimeInterval const _defaultTimeoutInterval = 86400.;
 static NSString * const _cacheFolderName = @"com.flubbermedia.cache";
 static NSString * const _cacheDictionaryFileName = @"cache.plist";
 
-static NSString *md5(NSString *string)
+@interface NSString (md5)
+
+- (NSString *)md5;
+
+@end
+
+@implementation NSString (md5)
+
+- (NSString *)md5
 {
-    const char *cStr = [string UTF8String];
+    const char *cStr = [self UTF8String];
     unsigned char result[16];
     CC_MD5(cStr, strlen(cStr), result);
     
-    return [NSString stringWithFormat:
-            @"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+    return [NSString stringWithFormat:@"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
             result[0], result[1], result[2], result[3], result[4], result[5], result[6], result[7],
-            result[8], result[9], result[10], result[11], result[12], result[13], result[14], result[15]
-            ];
+            result[8], result[9], result[10], result[11], result[12], result[13], result[14], result[15]];
 }
 
-static NSString *cacheDataPath()
-{
-    NSString *folder = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) lastObject];
-    folder = [folder stringByAppendingPathComponent:_cacheFolderName];
-    
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-    if (![fileManager fileExistsAtPath:folder])
-    {
-        [fileManager createDirectoryAtPath:folder withIntermediateDirectories:YES attributes:nil error:NULL];
-    }
-    
-    return folder;
-}
-
-static NSString *cacheDictionaryPath()
-{
-    return [cacheDataPath() stringByAppendingPathComponent:_cacheDictionaryFileName];
-}
-
-static NSString *cacheFilePathWithKey(NSString *key)
-{
-    return [cacheDataPath() stringByAppendingPathComponent:md5(key)];
-}
+@end
 
 @interface FMCache ()
 
-@property (strong, nonatomic) NSOperationQueue *diskOperationQueue;
-@property (strong, atomic) NSMutableDictionary *cacheDictionary;
+@property (strong) NSMutableDictionary *cacheDictionary;
 
 @end
 
 @implementation FMCache
 
-+ (FMCache *)defaultCache
++ (FMCache *)diskCache
 {
-    static FMCache *_defaultCache = nil;
+    static FMCache *_diskCache = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        _defaultCache = [FMCache new];
+        _diskCache = [FMCache new];
     });
-    return _defaultCache;
+    return _diskCache;
 }
 
 + (NSCache *)memoryCache
@@ -84,147 +66,245 @@ static NSString *cacheFilePathWithKey(NSString *key)
     self = [super init];
     if (self)
     {
-        _diskOperationQueue = [NSOperationQueue new];
-        _diskOperationQueue.maxConcurrentOperationCount = 1;
+        if (&UIApplicationDidEnterBackgroundNotification)
+        {
+            [[NSNotificationCenter defaultCenter] addObserver:self
+                                                     selector:@selector(applicationDidEnterBackground:)
+                                                         name:UIApplicationDidEnterBackgroundNotification
+                                                       object:nil];
+        }
         
-        _cacheDictionary = [NSMutableDictionary dictionaryWithContentsOfFile:cacheDictionaryPath()];
+        _cacheDictionary = [NSMutableDictionary dictionaryWithContentsOfFile:[FMCache cacheDictionaryPath]];
         if (_cacheDictionary == nil)
         {
             _cacheDictionary = [NSMutableDictionary new];
         }
-                
-        [self cleanCacheDictionary];
-        [self saveCacheDictionary];
+        
+        [self removeExpiredObjects];
     }
     return self;
 }
 
-#pragma mark - Cache
+#pragma mark - Class Methods
 
-- (BOOL)hasCacheForKey:(NSString*)key
++ (id)objectForKey:(NSString *)key
 {
-	NSDate *date = [_cacheDictionary objectForKey:key];
-	if (date && ![[[NSDate date] earlierDate:date] isEqualToDate:date])
+    return [[FMCache diskCache] objectForKey:key];
+}
+
++ (void)setObject:(id <NSCoding>)object forKey:(NSString *)key
+{
+    [[FMCache diskCache] setObject:object forKey:key];
+}
+
++ (void)setObject:(id <NSCoding>)object forKey:(NSString *)key expirationDate:(NSDate *)date
+{
+    [[FMCache diskCache] setObject:object forKey:key expirationDate:date];
+}
+
++ (void)setObject:(id <NSCoding>)object forKey:(NSString *)key useMemory:(BOOL)useMemory
+{
+    [[FMCache diskCache] setObject:object forKey:key useMemory:useMemory];
+}
+
++ (void)setObject:(id <NSCoding>)object forKey:(NSString *)key expirationDate:(NSDate *)date useMemory:(BOOL)useMemory
+{
+    [[FMCache diskCache] setObject:object forKey:key expirationDate:date useMemory:useMemory];
+}
+
++ (void)removeObjectForKey:(NSString*)key
+{
+    [[FMCache diskCache] removeObjectForKey:key];
+}
+
++ (void)removeAllObject
+{
+    [[FMCache diskCache] removeAllObject];
+}
+
++ (BOOL)hasObjectForKey:(NSString*)key
+{
+    return [[FMCache diskCache] hasObjectForKey:key];
+}
+
++ (BOOL)hasObjectOnDiskForKey:(NSString *)key
+{
+    return [[FMCache diskCache] hasObjectOnDiskForKey:key];
+}
+
++ (BOOL)hasObjectInMemoryForKey:(NSString *)key
+{
+    return [[FMCache diskCache] hasObjectInMemoryForKey:key];
+}
+
+#pragma mark - Instance Methods
+
+- (id)objectForKey:(NSString *)key
+{
+    if ([self hasObjectInMemoryForKey:key])
     {
-        return ([[NSFileManager defaultManager] fileExistsAtPath:cacheFilePathWithKey(key)]);
+        return [[FMCache memoryCache] objectForKey:key];
     }
-    return NO;
-}
-
-- (void)removeCacheForKey:(NSString*)key
-{
-    [self removeCacheFileForKeyInBackground:key];
     
-    [_cacheDictionary removeObjectForKey:key];
-    [self saveCacheDictionary];
-}
-
-- (void)clearCache
-{
-    for (NSString *key in _cacheDictionary.allKeys)
+    if ([self hasObjectOnDiskForKey:key])
     {
-        [self removeCacheFileForKeyInBackground:key];
-    }
-    
-    [_cacheDictionary removeAllObjects];
-    [self saveCacheDictionary];
-}
-
-#pragma mark - Cache Data
-
-- (NSData *)dataForKey:(NSString *)key
-{
-    if ([self hasCacheForKey:key])
-    {
-        return [NSData dataWithContentsOfFile:cacheFilePathWithKey(key)];
+        NSString *filePath = [FMCache cacheFilePathWithKey:key];
+        return [NSKeyedUnarchiver unarchiveObjectWithFile:filePath];
     }
     
     return nil;
 }
 
-- (void)dataForKey:(NSString *)key completion:(void (^)(NSData *data))completion
+- (void)setObject:(id <NSCoding>)object forKey:(NSString *)key
 {
-    dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT,0);
-    dispatch_async(queue, ^{
-        NSData *data = [self dataForKey:key];
-        completion(data);
-    });
+    NSDate *expirationDate = [NSDate dateWithTimeIntervalSinceNow:_defaultTimeoutInterval];
+    [self setObject:object forKey:key expirationDate:expirationDate useMemory:YES];
 }
 
-- (void)setData:(NSData *)data forKey:(NSString *)key
+- (void)setObject:(id <NSCoding>)object forKey:(NSString *)key expirationDate:(NSDate *)date
 {
-    [self writeDataCacheFileInBackground:data withKey:key];
+    [self setObject:object forKey:key expirationDate:date useMemory:YES];
+}
+
+- (void)setObject:(id <NSCoding>)object forKey:(NSString *)key useMemory:(BOOL)useMemory
+{
+    NSDate *expirationDate = [NSDate dateWithTimeIntervalSinceNow:_defaultTimeoutInterval];
+    [self setObject:object forKey:key expirationDate:expirationDate useMemory:useMemory];
+}
+
+- (void)setObject:(id <NSCoding>)object forKey:(NSString *)key expirationDate:(NSDate *)date useMemory:(BOOL)useMemory
+{
+    if (object == nil || key == nil || date == nil)
+    {
+        return;
+    }
     
-    [_cacheDictionary setObject:[NSDate dateWithTimeIntervalSinceNow:_defaultTimeoutInterval] forKey:key];
+    @synchronized (_cacheDictionary)
+    {
+        [_cacheDictionary setObject:date forKey:key];
+    }
     
-    //[self saveCacheDictionary];
+    if (useMemory)
+    {
+        [[FMCache memoryCache] setObject:object forKey:key];
+    }
+    
+    NSString *filePath = [FMCache cacheFilePathWithKey:key];
+    [NSKeyedArchiver archiveRootObject:object toFile:filePath];
 }
 
-#pragma mark - Cache Image
-
-- (UIImage *)imageForKey:(NSString *)key
+- (void)removeObjectForKey:(NSString*)key
 {
-    NSData *data = [self dataForKey:key];
-    return [UIImage imageWithData:data];
+    @synchronized (_cacheDictionary)
+    {
+        [_cacheDictionary removeObjectForKey:key];
+    }
+    
+    [self removeObjectFileForKey:key];
 }
 
-- (void)imageForKey:(NSString *)key completion:(void (^)(UIImage *image))completion
+- (void)removeAllObject
 {
-    [self dataForKey:key completion:^(NSData *data) {
-        dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT,0);
-        dispatch_async(queue, ^{
-            UIImage *image = [UIImage imageWithData:data];
-            completion(image);
-        });
-    }];
+    for (NSString *key in _cacheDictionary.allKeys)
+    {
+        [self removeObjectForKey:key];
+    }
 }
 
-- (void)setImage:(UIImage *)image forKey:(NSString *)key
+- (BOOL)hasObjectForKey:(NSString*)key
 {
-    [self setData:UIImagePNGRepresentation(image) forKey:key];
+    return ([self hasObjectInMemoryForKey:key] || [self hasObjectOnDiskForKey:key]);
+}
+            
+- (BOOL)hasObjectOnDiskForKey:(NSString *)key
+{
+    @synchronized (_cacheDictionary)
+    {
+        NSDate *date = [_cacheDictionary objectForKey:key];
+        if (date && ![[[NSDate date] earlierDate:date] isEqualToDate:date])
+        {
+            NSString *filePath = [FMCache cacheFilePathWithKey:key];
+            return ([[NSFileManager defaultManager] fileExistsAtPath:filePath]);
+        }
+    }
+    
+    return NO;
+}
+
+- (BOOL)hasObjectInMemoryForKey:(NSString *)key
+{
+    return ([[FMCache memoryCache] objectForKey:key] != nil);
+}
+
+#pragma mark - Paths
+
++ (NSString *)cacheDataPath
+{
+    NSString *folder = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) lastObject];
+    folder = [folder stringByAppendingPathComponent:_cacheFolderName];
+    
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    if (![fileManager fileExistsAtPath:folder])
+    {
+        [fileManager createDirectoryAtPath:folder withIntermediateDirectories:YES attributes:nil error:NULL];
+    }
+    
+    return folder;
+}
+
++ (NSString *)cacheDictionaryPath
+{
+    return [[FMCache cacheDataPath] stringByAppendingPathComponent:_cacheDictionaryFileName];
+}
+
++ (NSString *)cacheFilePathWithKey:(NSString *)key
+{
+    return [[FMCache cacheDataPath] stringByAppendingPathComponent:[key md5]];
 }
 
 #pragma mark - Utilities
 
-- (void)cleanCacheDictionary
+- (void)removeObjectFileForKey:(NSString *)key
 {
-    NSMutableArray *removeList = [NSMutableArray array];
+    NSString *filePath = [FMCache cacheFilePathWithKey:key];
     
-    for (NSString *key in _cacheDictionary.allKeys)
+    if ([[NSFileManager defaultManager] fileExistsAtPath:filePath])
     {
-        NSDate *date = [_cacheDictionary objectForKey:key];
-        if ([[[NSDate date] earlierDate:date] isEqualToDate:date])
+        [[NSFileManager defaultManager] removeItemAtPath:filePath error:nil];
+    }
+}
+
+- (void)removeExpiredObjects
+{
+    @synchronized (_cacheDictionary)
+    {
+        NSMutableArray *expiredObjects = [NSMutableArray array];
+        
+        for (NSString *key in _cacheDictionary.allKeys)
         {
-            [removeList addObject:key];
-            [self removeCacheFileForKeyInBackground:key];
+            NSDate *date = [_cacheDictionary objectForKey:key];
+            if ([[[NSDate date] earlierDate:date] isEqualToDate:date])
+            {
+                [expiredObjects addObject:key];
+                [self removeObjectFileForKey:key];
+            }
+        }
+        
+        if (expiredObjects.count)
+        {
+            [_cacheDictionary removeObjectsForKeys:expiredObjects];
         }
     }
-    
-    if (removeList.count)
+}
+
+#pragma mark - Application Notifications
+
+- (void)applicationDidEnterBackground:(NSNotification *)notification
+{
+    @synchronized (_cacheDictionary)
     {
-        [_cacheDictionary removeObjectsForKeys:removeList];
+        [_cacheDictionary writeToFile:[FMCache cacheDictionaryPath] atomically:YES];
     }
-}
-
-- (void)saveCacheDictionary
-{
-    [_diskOperationQueue addOperationWithBlock:^{
-        [_cacheDictionary writeToFile:cacheDictionaryPath() atomically:YES];
-    }];
-}
-
-- (void)removeCacheFileForKeyInBackground:(NSString *)key
-{
-    [_diskOperationQueue addOperationWithBlock:^{
-        [[NSFileManager defaultManager] removeItemAtPath:cacheFilePathWithKey(key) error:nil];
-    }];
-}
-
-- (void)writeDataCacheFileInBackground:(NSData *)data withKey:(NSString *)key
-{
-    [_diskOperationQueue addOperationWithBlock:^{
-        [data writeToFile:cacheFilePathWithKey(key) atomically:YES];
-    }];
 }
 
 @end

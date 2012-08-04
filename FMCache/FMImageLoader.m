@@ -11,7 +11,7 @@
 
 @interface FMImageLoader ()
 
-@property (strong, atomic) NSOperationQueue *networkOperationQueue;
+@property (strong, atomic) NSOperationQueue *operationQueue;
 
 @end
 
@@ -32,51 +32,48 @@
     self = [super init];
     if (self)
     {
-        _networkOperationQueue = [NSOperationQueue new];
-        _networkOperationQueue.maxConcurrentOperationCount = 3;
+        _operationQueue = [NSOperationQueue new];
+        _operationQueue.maxConcurrentOperationCount = 3;
     }
     return self;
 }
 
-+ (NSOperation *)loadImageWithURL:(NSURL *)url completion:(void (^)(UIImage *image, BOOL fromMemory))completion
++ (NSOperation *)loadImageWithURL:(NSURL *)url completion:(void (^)(UIImage *image, BOOL fromMemory, BOOL isCancelled))completion
 {
     return [[FMImageLoader sharedLoader] loadImageWithURL:url completion:completion];
 }
 
-- (NSOperation *)loadImageWithURL:(NSURL *)url completion:(void (^)(UIImage *image, BOOL fromMemory))completion
+- (NSOperation *)loadImageWithURL:(NSURL *)url completion:(void (^)(UIImage *image, BOOL fromMemory, BOOL isCancelled))completion
 {
-    //memory cache
-    UIImage *memoryImage = [[FMCache memoryCache] objectForKey:url.absoluteString];
-    if (memoryImage)
+    if ([FMCache hasObjectInMemoryForKey:url.absoluteString])
     {
-        completion(memoryImage, YES);
-    }
-    
-    //disk cache
-    if ([[FMCache defaultCache] hasCacheForKey:url.absoluteString])
-    {
-        [[FMCache defaultCache] imageForKey:url.absoluteString
-                                 completion:^(UIImage *image) {
-                                     [[FMCache memoryCache] setObject:image forKey:url.absoluteString];
-                                     completion(image, NO);
-                                 }];
+        UIImage *image = [FMCache objectForKey:url.absoluteString];
+        completion(image, YES, NO);
         return nil;
     }
-
-    //download remote
-    NSBlockOperation *op = [NSBlockOperation blockOperationWithBlock:^{
+    
+    if ([FMCache hasObjectOnDiskForKey:url.absoluteString])
+    {
+        NSBlockOperation *op = [NSBlockOperation new];
+        [op addExecutionBlock:^{
+            UIImage *image = [FMCache objectForKey:url.absoluteString];
+            [FMCache setObject:image forKey:url.absoluteString];            
+            completion(image, NO, op.isCancelled);
+        }];
+        [_operationQueue addOperation:op];
+        return op;
+    }
+    
+    
+    NSBlockOperation *op = [NSBlockOperation new];
+    [op addExecutionBlock:^{
+        
         NSData *data = [NSData dataWithContentsOfURL:url];
         UIImage *image = [UIImage imageWithData:data];
-        if (image)
-        {
-            [[FMCache defaultCache] setImage:image forKey:url.absoluteString];
-            [[FMCache memoryCache] setObject:image forKey:url.absoluteString];
-        }
-        completion(image, NO);
+        [FMCache setObject:image forKey:url.absoluteString];
+        completion(image, NO, op.isCancelled);
     }];
-    
-    [_networkOperationQueue addOperation:op];
-    
+    [_operationQueue addOperation:op];
     return op;
 }
 

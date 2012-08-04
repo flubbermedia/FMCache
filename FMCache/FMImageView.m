@@ -34,7 +34,12 @@
         [_lastLoadOperation cancel];
     }
     
-    _lastLoadOperation = [FMImageLoader loadImageWithURL:url completion:^(UIImage *image, BOOL fromMemory) {
+    _lastLoadOperation = [FMImageLoader loadImageWithURL:url completion:^(UIImage *image, BOOL fromMemory, BOOL isCancelled) {
+        
+        if (isCancelled)
+        {
+            return;
+        }
         
         dispatch_async(dispatch_get_main_queue(), ^{
             
