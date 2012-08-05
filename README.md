@@ -22,14 +22,18 @@ FMImageView
 Use the FMImageView exactly as if it you would use an UIImageView.
 In addition to that you can use the property `imageURL` to load asynchronously the remote image.
 
-    imageView.imageURL = [NSURL URLWithString:@"http://website.com/coolimage.png"];
+```objectivec
+imageView.imageURL = [NSURL URLWithString:@"http://website.com/coolimage.png"];
+```
 
 Otherwise you can use the `setImageURL:completion` method to be notified when the image loading is finished
 
-    [imageView setImageURL:url
-                completion:^{
-                    //your code here
-                }];
+```objectivec
+[imageView setImageURL:url
+    completion:^{
+        //your code here
+}];
+```
 
 FMImageLoader
 -------------
@@ -43,11 +47,15 @@ FMCache
 -------
 Add and object to the FMCache is easy, you only need to be sure it is `NSCoding` compliant (like a `UIImage`) and set it with a key.
 
-    [FMCache setObject:yourObject forKey:yourStringKey];
+```objectivec
+[FMCache setObject:yourObject forKey:yourStringKey];
+```
 
 To retrieve it back... just ask it.
 
-    id yourObject = [FMCache objectForKey:yourStringKey];
+```objectivec
+id yourObject = [FMCache objectForKey:yourStringKey];
+```
 
 This is the basic use for the FMCache and it automatically manage the disk and memory cache.
 If you want  to use it in a more advanced way you can choose to use the memory or not (the default is YES).
@@ -56,32 +64,38 @@ If you want  to use it in a more advanced way you can choose to use the memory o
 
 You can also define the `expiratioDate` or combine it with the `useMemory`.
 
-    //use the default memory cache and set the expirationDate
-    [FMCache setObject:yourObjcet forKey:yourStringKey expirationDate:aDate];
+```objectivec
+//use the default memory cache and set the expirationDate
+[FMCache setObject:yourObjcet forKey:yourStringKey expirationDate:aDate];
     
-    //combined use
-    [FMCache setObject:yourObjcet forKey:yourStringKey expirationDate:aDate useMemory:NO];
+//combined use
+[FMCache setObject:yourObjcet forKey:yourStringKey expirationDate:aDate useMemory:NO];
+```
 
 You can ask if an object is cached
 
-    //return a bool that is true if there's an object cached with that key
-    //this method check both the memory and disk cache
-    [FMCache hasObjectForKey:aKey];
+```objectivec
+//return a bool that is true if there's an object cached with that key
+//this method check both the memory and disk cache
+[FMCache hasObjectForKey:aKey];
 
-    //this method check only the disk cache
-    [FMCache hasObjectOnDiskForKey:aKey];
+//this method check only the disk cache
+[FMCache hasObjectOnDiskForKey:aKey];
 
-    //this method check only the memory cache
-    [FMCache hasObjectInMemoryForKey:aKey];
+//this method check only the memory cache
+[FMCache hasObjectInMemoryForKey:aKey];
+```
 
 To clean the cache you remove all the objects in one time or just remove one with a specific key.
 Keep in mind that you don't need to clean the old objects in the cache, it automatically do once the application is launched.
 
-    //delete a specific object from the cache
-    [FMCache removeObjectForKey:aKey];
+```objectivec
+//delete a specific object from the cache
+[FMCache removeObjectForKey:aKey];
 
-    //delete all the cached objects
-    [FMCache removeAllObjects];
+//delete all the cached objects
+[FMCache removeAllObjects];
+```
 
 Credits
 -------
