@@ -31,5 +31,6 @@
 @interface FMImageLoader : NSObject
 
 + (NSOperation *)loadImageWithURL:(NSURL *)url completion:(void (^)(UIImage *image, BOOL fromMemory, BOOL isCancelled))completion;
++ (NSOperation *)loadImageWithURL:(NSURL *)url expirationDate:(NSDate *)date completion:(void (^)(UIImage *image, BOOL fromMemory, BOOL isCancelled))completion;
 
 @end

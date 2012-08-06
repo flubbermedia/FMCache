@@ -29,6 +29,8 @@
 #import "FMImageLoader.h"
 #import "FMCache.h"
 
+static NSTimeInterval const _defaultTimeoutInterval = 604800.; // 1 week
+
 @interface FMImageLoader ()
 
 @property (strong, atomic) NSOperationQueue *operationQueue;
@@ -58,12 +60,27 @@
     return self;
 }
 
+#pragma Class methods
+
 + (NSOperation *)loadImageWithURL:(NSURL *)url completion:(void (^)(UIImage *image, BOOL fromMemory, BOOL isCancelled))completion
 {
     return [[FMImageLoader sharedLoader] loadImageWithURL:url completion:completion];
 }
 
++ (NSOperation *)loadImageWithURL:(NSURL *)url expirationDate:(NSDate *)date completion:(void (^)(UIImage *image, BOOL fromMemory, BOOL isCancelled))completion;
+{
+    return [[FMImageLoader sharedLoader] loadImageWithURL:url expirationDate:date completion:completion];
+}
+
+#pragma Instance methods
+
 - (NSOperation *)loadImageWithURL:(NSURL *)url completion:(void (^)(UIImage *image, BOOL fromMemory, BOOL isCancelled))completion
+{
+    NSDate *expirationDate = [NSDate dateWithTimeIntervalSinceNow:_defaultTimeoutInterval];
+    return [[FMImageLoader sharedLoader] loadImageWithURL:url expirationDate:expirationDate completion:completion];
+}
+
+- (NSOperation *)loadImageWithURL:(NSURL *)url expirationDate:(NSDate *)date completion:(void (^)(UIImage *image, BOOL fromMemory, BOOL isCancelled))completion
 {
     if ([FMCache hasObjectInMemoryForKey:url.absoluteString])
     {
@@ -77,7 +94,14 @@
         NSBlockOperation *op = [NSBlockOperation new];
         [op addExecutionBlock:^{
             UIImage *image = [FMCache objectForKey:url.absoluteString];
-            [FMCache setObject:image forKey:url.absoluteString];            
+            if (image)
+            {
+                [FMCache setObject:image forKey:url.absoluteString expirationDate:date];
+            }
+            else
+            {
+                [FMCache removeObjectForKey:url.absoluteString];
+            }
             completion(image, NO, op.isCancelled);
         }];
         [_operationQueue addOperation:op];
@@ -90,7 +114,15 @@
         
         NSData *data = [NSData dataWithContentsOfURL:url];
         UIImage *image = [UIImage imageWithData:data];
-        [FMCache setObject:image forKey:url.absoluteString];
+        if (image)
+        {
+            [FMCache setObject:image forKey:url.absoluteString expirationDate:date];
+        }
+        else
+        {
+            [FMCache removeObjectForKey:url.absoluteString];
+        }
+        
         completion(image, NO, op.isCancelled);
     }];
     [_operationQueue addOperation:op];
