@@ -216,6 +216,11 @@ static NSString * const _cacheDictionaryFileName = @"cache.plist";
 
 - (void)removeObjectForKey:(NSString*)key
 {
+    if (key == nil)
+    {
+        return;
+    }
+    
     @synchronized (_cacheDictionary)
     {
         [_cacheDictionary removeObjectForKey:key];
