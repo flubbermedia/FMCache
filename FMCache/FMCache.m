@@ -211,7 +211,11 @@ static NSString * const _cacheDictionaryFileName = @"cache.plist";
     }
     
     NSString *filePath = [FMCache cacheFilePathWithKey:key];
-    [NSKeyedArchiver archiveRootObject:object toFile:filePath];
+    BOOL archived = [NSKeyedArchiver archiveRootObject:object toFile:filePath];
+    if (!archived)
+    {
+        [FMCache removeObjectForKey:key];
+    }
 }
 
 - (void)removeObjectForKey:(NSString*)key
