@@ -99,4 +99,4 @@ Keep in mind that you don't need to clean the old objects in the cache, it autom
 
 Credits
 -------
-FMFacebookPanel was created by [Maurizio Cremaschi](http://www.linkedin.com/in/cremaschi) and [Andrea Ottolina](http://www.linkedin.com/in/andreaottolina) for [Flubber Media Ltd](http://flubbermedia.com).
+FMCache was created by [Maurizio Cremaschi](http://www.linkedin.com/in/cremaschi) and [Andrea Ottolina](http://www.linkedin.com/in/andreaottolina) for [Flubber Media Ltd](http://flubbermedia.com).
