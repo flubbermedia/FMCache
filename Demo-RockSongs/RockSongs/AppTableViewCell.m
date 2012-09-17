@@ -13,11 +13,11 @@
 
 - (void)awakeFromNib
 {
-    [self rotateView:self.imageView1];
-    [self rotateView:self.imageView2];
-    [self rotateView:self.imageView3];
-    [self rotateView:self.imageView4];
-    [self rotateView:self.imageView5];
+    //[self rotateView:self.imageView1];
+    //[self rotateView:self.imageView2];
+    //[self rotateView:self.imageView3];
+    //[self rotateView:self.imageView4];
+    //[self rotateView:self.imageView5];
 }
 
 #pragma mark - Properties
