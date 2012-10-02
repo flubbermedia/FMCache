@@ -31,6 +31,7 @@
 @interface FMImageView : UIImageView
 
 @property (strong, nonatomic) NSURL *imageURL;
+@property (strong, nonatomic) UIImage *placeholder;
 
 - (void)setImageURL:(NSURL *)url completion:(void (^)(void))completion;
 

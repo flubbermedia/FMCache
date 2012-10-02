@@ -33,10 +33,13 @@
 @interface FMImageView ()
 
 @property (strong, nonatomic) NSOperation *lastLoadOperation;
+@property (assign, nonatomic) BOOL isLoading;
 
 @end
 
 @implementation FMImageView
+
+#pragma mark - Properties
 
 - (void)setImageURL:(NSURL *)url
 {
@@ -47,12 +50,16 @@
 {
     _imageURL = url;
     
-    self.image = nil;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        self.image = _placeholder;
+    });
     
     if (_lastLoadOperation)
     {
         [_lastLoadOperation cancel];
     }
+    
+    _isLoading = YES;
     
     _lastLoadOperation = [FMImageLoader loadImageWithURL:url completion:^(UIImage *image, BOOL fromMemory, BOOL isCancelled) {
         
@@ -77,8 +84,22 @@
         {
             completion();
         }
+        
+        _isLoading = NO;
     }];
 }
+
+- (void)setPlaceholder:(UIImage *)placeholder
+{
+    _placeholder = placeholder;
+    
+    if (self.image == nil && !_isLoading)
+    {
+        self.image = placeholder;
+    }
+}
+
+#pragma mark - Utilities
 
 - (void)crossFadeImage:(UIImage *)image
 {
