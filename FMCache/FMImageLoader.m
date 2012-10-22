@@ -92,6 +92,7 @@ static NSTimeInterval const _defaultTimeoutInterval = 604800.; // 1 week
     if ([FMCache hasObjectOnDiskForKey:url.absoluteString])
     {
         NSBlockOperation *op = [NSBlockOperation new];
+        __weak NSBlockOperation *weakOp = op;
         [op addExecutionBlock:^{
             UIImage *image = [FMCache objectForKey:url.absoluteString];
             if (image)
@@ -102,16 +103,17 @@ static NSTimeInterval const _defaultTimeoutInterval = 604800.; // 1 week
             {
                 [FMCache removeObjectForKey:url.absoluteString];
             }
-            completion(image, NO, op.isCancelled);
+            completion(image, NO, weakOp.isCancelled);
         }];
         [_operationQueue addOperation:op];
+        
         return op;
     }
     
     
     NSBlockOperation *op = [NSBlockOperation new];
+    __weak NSBlockOperation *weakOp = op;
     [op addExecutionBlock:^{
-        
         NSData *data = [NSData dataWithContentsOfURL:url];
         UIImage *image = [UIImage imageWithData:data];
         if (image)
@@ -122,8 +124,7 @@ static NSTimeInterval const _defaultTimeoutInterval = 604800.; // 1 week
         {
             [FMCache removeObjectForKey:url.absoluteString];
         }
-        
-        completion(image, NO, op.isCancelled);
+        completion(image, NO, weakOp.isCancelled);
     }];
     [_operationQueue addOperation:op];
     return op;
